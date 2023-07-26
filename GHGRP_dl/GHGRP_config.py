@@ -21,19 +21,17 @@ if __name__ == '__main__':
     years = [2010, 2015, 2021]
 
     tables = [
-        'C_FUEL_LEVEL_INFORMATION',
-        'D_FUEL_LEVEL_INFORMATION',
+        'c_fuel_level_information',
+        'd_fuel_level_information',
         'V_GHG_EMITTER_FACILITIES',
-        'V_GHG_EMITTER_SUBPART',
-        'AA_FOSSIL_FUEL_INFORMATION',
-        'AA_SPENT_LIQUOR_INFORMATION'
+        'v_ghg_emitter_subpart',
+        'aa_fossil_fuel_information',
+        'aa_spent_liquor_information',
     ]
 
     # Data on CO2 and CH4 emission factors by fuel type
     EFs = pd.read_csv('./EPA_FuelEFs.csv', index_col=['Fuel_Type'])
-
     EFs['dup_index'] = EFs.index.duplicated()
-
     EFs = pd.DataFrame(EFs[EFs.dup_index == False], columns=EFs.columns[0:2])
 
     # Set file directory
@@ -44,9 +42,7 @@ if __name__ == '__main__':
     wood_facID = pd.read_csv('WoodRes_correction_facilities.csv', index_col=['FACILITY_ID'])
 
     ghgrp_energy = pd.DataFrame()
-
     aa_sl_table = pd.DataFrame()
-
     aa_ffuel_table = pd.DataFrame()
 
     # Get data from EPA API
@@ -58,15 +54,12 @@ if __name__ == '__main__':
     for y in years:
 
         c_fuel_table = Get_GHGRP_data.get_GHGRP_records(y, tables[0])
-
         c_fuel_table.to_csv(f'c_fuel_{y}.csv')
 
         d_fuel_table = Get_GHGRP_data.get_GHGRP_records(y, tables[1])
-
         d_fuel_table.to_csv(f'd_fuel_{y}.csv')
 
         fac_table = Get_GHGRP_data.get_GHGRP_records(y, tables[2])
-
         fac_table.to_csv(f'fac_table_{y}.csv')
 
         for t in [('c_fuel_table', c_fuel_table), ('d_fuel_table', d_fuel_table), ('fac_table', fac_table)]:
@@ -85,15 +78,12 @@ if __name__ == '__main__':
         ])
 
     aa_sl_file = f'aa_sl_table_{years[0]}{years[-1]}.csv'
-
     aa_sl_table.to_csv(file_dir + aa_sl_file)
 
     aa_ffuel_file = f'aa_ffuel_table_{years[0]}{years[-1]}.csv'
-
     aa_ffuel_table.to_csv(file_dir + aa_ffuel_file)
 
     facfile_2010 = file_dir + 'fac_table_2010.csv'
-
     facfiles_201115 = []
 
     for y in years:
@@ -118,7 +108,7 @@ if __name__ == '__main__':
             GHGs_y, facdata, EFs, wood_facID
         )
 
-        ghgrp_energy = pd.concat([ghgrp_energy,GHGs_y])
+        ghgrp_energy = pd.concat([ghgrp_energy, GHGs_y])
 
     # Calculate energy for Subpart AA reporters
     GHGs_FF = GHGRP_AAenergy_calc.format_GHGRP_AAff_emissions(
@@ -130,14 +120,11 @@ if __name__ == '__main__':
     )
 
     AA_FF_energy = GHGRP_AAenergy_calc.MMBTU_calc_AAff(GHGs_FF, EFs)
-
     AA_SL_energy = GHGRP_AAenergy_calc.MMBTU_calc_AAsl(GHGs_SL)
-
     AA_energy = GHGRP_AAenergy_calc.AA_merge(AA_FF_energy, AA_SL_energy)
 
     # Merge calculated energy values for Subparts AA, C, and D
     ghgrp_energy = GHGRP_energy_calc.energy_merge(ghgrp_energy, facdata, AA_energy)
-
     ghgrp_energy = GHGRP_energy_calc.id_industry_groups(ghgrp_energy)
 
     # Add timestamp to output csv file.

@@ -18,6 +18,7 @@ def format_GHGRP_AAff_emissions(aa_ffuel_file):
     GHGs_FF.dropna(axis=0, subset=['FACILITY_ID'], inplace=True)
 
     if len(GHGs_FF) == 0:
+        # TODO handle this more aggressively
         return GHGs_FF
 
     GHGs_FF.reset_index(drop=True, inplace=True)
@@ -55,6 +56,7 @@ def format_GHGRP_AAsl_emissions(aa_sl_file):
     GHGs_SL.dropna(axis=0, subset=['SPENT_LIQUOR_CO2_EMISSIONS'], inplace=True)
 
     if len(GHGs_SL) == 0:
+        # TODO handle this more aggressively
         return GHGs_SL
 
     for c in ('FACILITY_ID', 'REPORTING_YEAR'):
@@ -87,6 +89,7 @@ def MMBTU_calc_AAff(GHGs_FF, EFs):
     df_FF_energy = pd.DataFrame(index=GHGs_FF.index)
 
     if len(df_FF_energy) == 0:
+        # TODO handle this more aggressively
         return df_FF_energy
 
     for c in ['TIER_1_CO2_EMISSIONS', 'TIER_2_CO2_EMISSIONS',
@@ -99,7 +102,6 @@ def MMBTU_calc_AAff(GHGs_FF, EFs):
                 ].index
 
             if fuel_index.size > 0:
-
                 df_FF_energy.loc[fuel_index, (c[0:6] + '_MMBtu')] = \
                     GHGs_FF.loc[fuel_index, c].divide(
                         EFs.ix[ft]['CO2_kgCO2_per_mmBtu'], fill_value=0

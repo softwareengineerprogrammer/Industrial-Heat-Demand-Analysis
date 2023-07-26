@@ -1,5 +1,6 @@
-# Industrial-Heat-Demand-Analysis
-This analysis characterizes the combustion energy demands of 14 significant industries in the U.S. It also includes calculation of facility-level annual energy demand from 2010 to 2015 based on greenhouse gas (GHG) emissions reported to the [U.S. Environmental Protection Agency's Greenhouse Gas Reporting Program (GHGRP)](https://www.epa.gov/ghgreporting) and estimation of the potential to reduce fossil fuel use through three alternative heat generators (i.e., geothermal, solar industrial process heat [SIPH], and small modular nuclear reactors [SMRs]).
+# Industrial Heat Demand Analysis
+This analysis characterizes the combustion energy demands of 14 significant industries in the U.S.
+It also includes calculation of facility-level annual energy demand from 2010 to 2015 based on greenhouse gas (GHG) emissions reported to the [U.S. Environmental Protection Agency's Greenhouse Gas Reporting Program (GHGRP)](https://www.epa.gov/ghgreporting) and estimation of the potential to reduce fossil fuel use through three alternative heat generators (i.e., geothermal, solar industrial process heat [SIPH], and small modular nuclear reactors [SMRs]).
 All code was written in Python 3.4.
 
 ## GHGRP Emissions Data

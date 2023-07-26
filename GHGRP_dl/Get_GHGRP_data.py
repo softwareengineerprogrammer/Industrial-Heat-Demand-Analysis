@@ -44,6 +44,7 @@ def get_GHGRP_records(
 
     print(f'Getting GHGRP records for {table}/{reporting_year}...')
 
+    # TODO put cache in a dedicated class
     global _GHGRP_records_cache
     cache_key = f'{table}/{reporting_year}'
     cache_file_path = Path(tempfile.gettempdir(), 'ghgrp-records-cache.json')
@@ -54,7 +55,7 @@ def get_GHGRP_records(
                     _GHGRP_records_cache = json.loads(''.join(cache_file.readlines()))
                     print(f'Valid cache file found: {cache_file_path}')
             except (FileNotFoundError, JSONDecodeError) as e:
-                print(f'No valid cache file found, will create one at {cache_file_path}.')
+                print(f'No valid cache file found, will create one at {cache_file_path}')
                 _GHGRP_records_cache = {}
 
         if cache_key in _GHGRP_records_cache:
@@ -87,9 +88,11 @@ def get_GHGRP_records(
         except IndexError as ie:
             n_records = int(list(et.fromstring(r.content).iter('RequestRecordCount'))[0].text)
         except Exception as e:
+            print(f'[ERROR] Encountered exception getting record count: {e}')
             r.raise_for_status()
 
         if n_records > 10000:
+            # TODO implement proper pagination instead of this workaround
             r_range = range(0, n_records, 10000)
 
             for n in range(len(r_range) - 1):
@@ -98,7 +101,8 @@ def get_GHGRP_records(
                     records_root = et.fromstring(r_records.content)
                     r_df = xml_to_df(records_root, table, ghgrp.columns)
                     ghgrp = pd.concat([ghgrp, r_df])
-                except:
+                except Exception as e:
+                    print(f'[ERROR] Encountered exception fetching or concatenating records: {e}')
                     r_records.raise_for_status()
 
             records_last = requests.get(f'{table_url}/rows/{r_range[-1]}:{n_records}')
@@ -112,7 +116,8 @@ def get_GHGRP_records(
                 records_root = et.fromstring(r_records.content)
                 r_df = xml_to_df(records_root, table, ghgrp.columns)
                 ghgrp = pd.concat([ghgrp, r_df])
-            except:
+            except Exception as e:
+                print(f'[ERROR] Encountered exception fetching or concatenating records: {e}')
                 r_records.raise_for_status()
 
     else:
@@ -121,7 +126,8 @@ def get_GHGRP_records(
             records_root = et.fromstring(r_records.content)
             r_df = xml_to_df(records_root, table, ghgrp.columns)
             ghgrp = pd.concat([ghgrp, r_df])
-        except:
+        except Exception as e:
+            print(f'[ERROR] Encountered exception fetching or concatenating records: {e}')
             r_records.raise_for_status()
 
     ghgrp.drop_duplicates(inplace=True)
@@ -139,6 +145,7 @@ def get_GHGRP_records(
 if __name__ == '__main__':
     for t in ['V_GHG_EMITTER_FACILITIES']:
         for year in [2015, 2021]:
+            # TODO use logging (https://docs.python.org/3/library/logging.html) instead of print, here and elsewhere
             print(f'Getting data for {t}/{year}...')
             df = get_GHGRP_records(year, t)
             print(f'\tGot {len(df)} rows for {t}/{year}')

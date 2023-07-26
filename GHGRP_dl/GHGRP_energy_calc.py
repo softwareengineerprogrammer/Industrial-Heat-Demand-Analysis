@@ -356,6 +356,7 @@ def calculate_energy(GHGs, all_fac, EFs, wood_facID):
     )
 
     if len(GHGs) == 0:
+        # TODO handle this more aggressively
         return GHGs
 
     #   First, zero out 40 CFR Part 75 energy use for electric utilities
@@ -517,6 +518,7 @@ def id_industry_groups(GHGs):
     GHGs = pd.merge(GHGs, gd_df, left_on=GHGs.PNC_3, right_index=True)
 
     if len(GHGs) == 0:
+        # TODO handle this more aggressively
         return GHGs
 
     # Identify manufacturing groupings
