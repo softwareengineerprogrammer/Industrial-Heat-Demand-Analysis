@@ -25,6 +25,10 @@ Methods for calculating facility-level combustion energy from GHGRP emissions da
 #### `GHGRP_AAenergy_calc.py`
 Methods for formatting Subpart AA emissions data and calculating associated combustion energy.
 
+#### `zip2fips.json`
+
+From https://github.com/bgruber/zip2fips/blob/master/zip2fips.json
+
 ## Target Industry Heat Characterization
 Calculated combustion energy data for the 14 target industries is broken down by end use (e.g., process heating, cogeneration) using information provided by the GHGRP (when provided) and Energy Information Administration (EIA) [Manufacturing Energy Consumption Survey (MECS)](https://www.eia.gov/consumption/manufacturing/).
 Energy by end use is further characterized by temperature range and load.

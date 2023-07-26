@@ -18,7 +18,7 @@ import GHGRP_AAenergy_calc
 
 if __name__ == '__main__':
     # years = range(2010, 2016)
-    years = [2015, 2021]
+    years = [2010, 2015, 2021]
 
     tables = [
         'C_FUEL_LEVEL_INFORMATION',

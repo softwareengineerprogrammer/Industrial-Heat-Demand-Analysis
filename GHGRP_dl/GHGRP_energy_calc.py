@@ -202,39 +202,42 @@ def format_GHGRP_facilities(fac_file_2010, oth_facfiles):
         """
         facdata = pd.read_csv(ffile, encoding='latin_1', index_col=0)
 
-        #        Duplicate entries in facility data query. Remove them to enable a 1:1
-        #        mapping of facility info with ghg data via FACILITY_ID.
-        #        First ID facilities that have cogen units.
+        # Duplicate entries in facility data query. Remove them to enable a 1:1
+        # mapping of facility info with ghg data via FACILITY_ID.
+        # First ID facilities that have cogen units.
         fac_cogen = facdata.FACILITY_ID[
             facdata['COGENERATION_UNIT_EMISS_IND'] == 'Y'
             ]
 
-        #        facdata.drop_duplicates('FACILITY_ID', inplace=True)
+        # facdata.drop_duplicates('FACILITY_ID', inplace=True)
 
         facdata.dropna(subset=['FACILITY_ID'], inplace=True)
 
-        #        Reindex dataframe based on facility ID
-        facdata.FACILITY_ID = facdata.FACILITY_ID.apply(np.int)
+        # Reindex dataframe based on facility ID
+        facdata.FACILITY_ID = facdata.FACILITY_ID.apply(int)
 
-        #        Correct PRIMARY_NAICS_CODE from 561210 to 324110 for Sunoco Toledo
-        #        Refinery (FACILITY_ID == 1001056); correct PRIMARY_NAICS_CODE from
-        #        331111 to 324199 for Mountain State Carbon, etc.
-        fix_dict = {1001056: {'PRIMARY_NAICS_CODE': 324110},
-                    1001563: {'PRIMARY_NAICS_CODE': 324119},
-                    1006761: {'PRIMARY_NAICS_CODE': 331221},
-                    1001870: {'PRIMARY_NAICS_CODE': 325110},
-                    1006907: {'PRIMARY_NAICS_CODE': 424710},
-                    1006585: {'PRIMARY_NAICS_CODE': 324199},
-                    1002342: {'PRIMARY_NAICS_CODE': 325222},
-                    1002854: {'PRIMARY_NAICS_CODE': 322121},
-                    1007512: {'SECONDARY_NAICS_CODE': 325199},
-                    1004492: {'PRIMARY_NAICS_CODE': 541712},
-                    1002434: {'PRIMARY_NAICS_CODE': 322121,
-                              'SECONDARY_NAICS_CODE': 322222},
-                    1002440: {'SECONDARY_NAICS_CODE': 221210},
-                    1002440: {'PRIMARY_NAICS_CODE': 325311},
-                    1003006: {'PRIMARY_NAICS_CODE': 324110},
-                    }
+        # Correct PRIMARY_NAICS_CODE from 561210 to 324110 for Sunoco Toledo
+        # Refinery (FACILITY_ID == 1001056); correct PRIMARY_NAICS_CODE from
+        # 331111 to 324199 for Mountain State Carbon, etc.
+        fix_dict = {
+            1001056: {'PRIMARY_NAICS_CODE': 324110},
+            1001563: {'PRIMARY_NAICS_CODE': 324119},
+            1006761: {'PRIMARY_NAICS_CODE': 331221},
+            1001870: {'PRIMARY_NAICS_CODE': 325110},
+            1006907: {'PRIMARY_NAICS_CODE': 424710},
+            1006585: {'PRIMARY_NAICS_CODE': 324199},
+            1002342: {'PRIMARY_NAICS_CODE': 325222},
+            1002854: {'PRIMARY_NAICS_CODE': 322121},
+            1007512: {'SECONDARY_NAICS_CODE': 325199},
+            1004492: {'PRIMARY_NAICS_CODE': 541712},
+            1002434: {
+                'PRIMARY_NAICS_CODE': 322121,
+                'SECONDARY_NAICS_CODE': 322222
+            },
+            1002440: {'SECONDARY_NAICS_CODE': 221210},
+            1002440: {'PRIMARY_NAICS_CODE': 325311},
+            1003006: {'PRIMARY_NAICS_CODE': 324110},
+        }
 
         for k, v in fix_dict.items():
             facdata.loc[facdata[facdata.FACILITY_ID == k].index,
@@ -242,7 +245,7 @@ def format_GHGRP_facilities(fac_file_2010, oth_facfiles):
 
         facdata.set_index(['FACILITY_ID'], inplace=True)
 
-        #        Re-label facilities with cogen units
+        # Re-label facilities with cogen units
         facdata.loc[fac_cogen, 'COGENERATION_UNIT_EMISS_IND'] = 'Y'
 
         facdata['MECS_Region'] = ""
@@ -254,21 +257,21 @@ def format_GHGRP_facilities(fac_file_2010, oth_facfiles):
     for f in oth_facfiles:
         ff_y = fac_read_fix(f)
 
-        all_fac = all_fac.append(ff_y)
+        all_fac = pd.concat([all_fac,ff_y])
 
-    #    Drop duplicated facility IDs, keeping first instance (i.e., year).
+    # Drop duplicated facility IDs, keeping first instance (i.e., year).
     all_fac = pd.DataFrame(all_fac[~all_fac.index.duplicated(keep='first')])
 
-    #    Identify facilities with missing County FIPS data and fill missing data.
-    #    Most of these facilities are mines or natural gas/crude oil processing
-    #    plants.
+    # Identify facilities with missing County FIPS data and fill missing data.
+    # Most of these facilities are mines or natural gas/crude oil processing
+    # plants.
 
     ff_index = all_fac[all_fac.COUNTY_FIPS.isnull() == False].index
 
     all_fac.loc[ff_index, 'COUNTY_FIPS'] = \
         [np.int(x) for x in all_fac.loc[ff_index, 'COUNTY_FIPS']]
 
-    #    Update facility information with new county FIPS data
+    # Update facility information with new county FIPS data
     missingfips = pd.DataFrame(all_fac[all_fac.COUNTY_FIPS.isnull() == True])
 
     missingfips.loc[:, 'COUNTY_FIPS'] = \
@@ -278,16 +281,16 @@ def format_GHGRP_facilities(fac_file_2010, oth_facfiles):
 
     all_fac['COUNTY_FIPS'].fillna(0, inplace=True)
 
-    #    Assign MECS regions and NAICS codes to facilities and merge location data
-    #    with GHGs dataframe.
-    #    EPA data for some facilities are missing county fips info
+    # Assign MECS regions and NAICS codes to facilities and merge location data
+    # with GHGs dataframe.
+    # EPA data for some facilities are missing county fips info
     all_fac.COUNTY_FIPS = all_fac.COUNTY_FIPS.apply(np.int)
 
-    concat_mecs_region = \
-        pd.concat(
-            [all_fac.MECS_Region, MECS_regions.MECS_Region], axis=1, \
-            join_axes=[all_fac.COUNTY_FIPS]
-        )
+    concat_mecs_region = pd.concat(
+        [all_fac.MECS_Region, MECS_regions.MECS_Region],
+        axis=1,
+        join_axes=[all_fac.COUNTY_FIPS]
+    )
 
     all_fac.loc[:, 'MECS_Region'] = concat_mecs_region.iloc[:, 1].values
 
@@ -331,7 +334,7 @@ def MMBTU_calc_CH4(GHGs, c, EFs):
     """
     emissions = GHGs[c].fillna(0) * 1000000
 
-    name = GHGs[c].name[0:5] + '_MMBtu'
+    name = f'{GHGs[c].name[0:5]}_MMBtu'
 
     df_energy = pd.DataFrame()
 
@@ -386,7 +389,7 @@ def calculate_energy(GHGs, all_fac, EFs, wood_facID):
                 (GHGs.wood_correction == True), 'T4CH4COMBUSTIONEMISSIONS'
             ].multiply(1.9 / 7.2)
 
-        # Separate, additional correction for facilities appearing to have
+    # Separate, additional correction for facilities appearing to have
     # continued reporting with previous CH4 emission factor for kraft liquor
     # combusion (now reported as Wood and Wood Residuals (dry basis).
     if GHGs.REPORTING_YEAR[0] == 2013:
