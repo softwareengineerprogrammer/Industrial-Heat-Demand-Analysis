@@ -29,7 +29,11 @@ def xml_to_df(xml_root, table_name, df_columns):
 _GHGRP_records_cache = None
 
 
-def get_GHGRP_records(reporting_year: int, table: str, rows: int = None, enable_cache=True):
+def get_GHGRP_records(
+        reporting_year: int,
+        table: str,
+        rows: int = None,
+        enable_cache: bool = True):
     """
     Return GHGRP data using EPA RESTful API based on specified reporting year 
     and table. Tables of interest are C_FUEL_LEVEL_INFORMATION, 
