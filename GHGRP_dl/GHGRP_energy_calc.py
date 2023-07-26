@@ -5,30 +5,20 @@ Created on Thu Jul 27 14:04:47 2017
 """
 
 import pandas as pd
-
 import numpy as np
-
 import requests
-
 import json
-
-
-# Import EPA GHG emission factors for fuel types.
-# Most emission factors originated from GHGRP guidance; additional values
-# have been added for "Biogas (Captured methane)", "Coke" (assumed to be
-# from coal), and "Wood and Wood Residuals" based on
-# EPA 2014 emission factors from http://www.epa.gov/sites/production/files/
-# 2015-12/documents/emission-factors_nov_2015.pdf
-#
-# EFs = pd.read_csv('EPA_FuelEFs.csv', index_col = ['Fuel_Type'])
-#
-# EFs['dup_index'] = EFs.index.duplicated()
-#
-# EFs = pd.DataFrame(EFs[EFs.dup_index == False], columns = EFs.columns[0:2])
 
 
 def fipfind(f, missingfips):
     z2f = json.load(open('zip2fips.json'))
+
+    if ((missingfips.loc[f, 'ZIP'] > 1000)
+            and (np.isnan(missingfips.loc[f, 'COUNTY_FIPS']) == True)
+            and (str(missingfips.loc[f, 'ZIP']) in z2f)):
+        fipfound = int(z2f[str(missingfips.loc[f, 'ZIP'])])
+
+        return fipfound
 
     if np.isnan(missingfips.loc[f, 'LATITUDE']) == False:
         lat = missingfips.loc[f, 'LATITUDE']
@@ -36,27 +26,22 @@ def fipfind(f, missingfips):
         lon = missingfips.loc[f, 'LONGITUDE']
 
         payload = {
-            'format': 'json', 'latitude': lat, 'longitude': lon,
+            'format': 'json',
+            'latitude': lat,
+            'longitude': lon,
             'showall': 'true'
         }
 
-        r = requests.get('http://data.fcc.gov/api/block/find?',
-                         params=payload
-                         )
+        r = requests.get(
+            'https://geo.fcc.gov/api/census/block/find?',
+            params=payload
+        )
 
         fipfoud = r.json()['County']['FIPS']
 
         return fipfoud
 
-    if ((missingfips.loc[f, 'ZIP'] > 1000)
 
-            & (np.isnan(missingfips.loc[f, 'COUNTY_FIPS']) == True)
-
-            & (str(missingfips.loc[f, 'ZIP']) in z2f)):
-
-        fipfound = int(z2f[str(missingfips.loc[f, 'ZIP'])])
-
-        return fipfound
 
     else:
 
@@ -90,7 +75,7 @@ def format_GHGRP_emissions(c_fuel_file, d_fuel_file):
     #
     #        GHGs = \
     #            GHGs[
-    #                GHGs.REPORTING_YEAR.apply(lambda x: type(x) == np.int) == True
+    #                GHGs.REPORTING_YEAR.apply(lambda x: type(x) == int) == True
     #                ]
 
     for c in ('FACILITY_ID', 'REPORTING_YEAR'):
@@ -257,7 +242,7 @@ def format_GHGRP_facilities(fac_file_2010, oth_facfiles):
     for f in oth_facfiles:
         ff_y = fac_read_fix(f)
 
-        all_fac = pd.concat([all_fac,ff_y])
+        all_fac = pd.concat([all_fac, ff_y])
 
     # Drop duplicated facility IDs, keeping first instance (i.e., year).
     all_fac = pd.DataFrame(all_fac[~all_fac.index.duplicated(keep='first')])
@@ -269,7 +254,7 @@ def format_GHGRP_facilities(fac_file_2010, oth_facfiles):
     ff_index = all_fac[all_fac.COUNTY_FIPS.isnull() == False].index
 
     all_fac.loc[ff_index, 'COUNTY_FIPS'] = \
-        [np.int(x) for x in all_fac.loc[ff_index, 'COUNTY_FIPS']]
+        [int(x) for x in all_fac.loc[ff_index, 'COUNTY_FIPS']]
 
     # Update facility information with new county FIPS data
     missingfips = pd.DataFrame(all_fac[all_fac.COUNTY_FIPS.isnull() == True])
@@ -284,7 +269,7 @@ def format_GHGRP_facilities(fac_file_2010, oth_facfiles):
     # Assign MECS regions and NAICS codes to facilities and merge location data
     # with GHGs dataframe.
     # EPA data for some facilities are missing county fips info
-    all_fac.COUNTY_FIPS = all_fac.COUNTY_FIPS.apply(np.int)
+    all_fac.COUNTY_FIPS = all_fac.COUNTY_FIPS.apply(int)
 
     concat_mecs_region = pd.concat(
         [all_fac.MECS_Region, MECS_regions.MECS_Region],
@@ -309,7 +294,7 @@ def MMBTU_calc_CO2(GHGs, c, EFs):
     """
     emissions = GHGs[c].fillna(0) * 1000
 
-    name = GHGs[c].name[0:5] + '_MMBtu'
+    name = f'{GHGs[c].name[0:5]}_MMBtu'
 
     df_energy = pd.DataFrame()
 
@@ -563,6 +548,19 @@ def id_industry_groups(GHGs):
 
 
 if __name__ == '__main__':
+    # Import EPA GHG emission factors for fuel types.
+    # Most emission factors originated from GHGRP guidance; additional values
+    # have been added for "Biogas (Captured methane)", "Coke" (assumed to be
+    # from coal), and "Wood and Wood Residuals" based on
+    # EPA 2014 emission factors from http://www.epa.gov/sites/production/files/
+    # 2015-12/documents/emission-factors_nov_2015.pdf
+    #
+    # EFs = pd.read_csv('EPA_FuelEFs.csv', index_col = ['Fuel_Type'])
+    #
+    # EFs['dup_index'] = EFs.index.duplicated()
+    #
+    # EFs = pd.DataFrame(EFs[EFs.dup_index == False], columns = EFs.columns[0:2])
+
     # GHGs = format_GHGRP_emissions(c_fuel_file, d_fuel_file)
     #
     # facdata = format_GHGRP_facilities(facilities_file)

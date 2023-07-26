@@ -24,7 +24,7 @@ def MatchMECS_NAICS_FT(DF, naics_column, MECS_NAICS, fuelxwalkDict,
 
     DF[naics_column].fillna(0, inplace=True)
 
-    DF.loc[:, naics_column] = [np.int(x) for x in
+    DF.loc[:, naics_column] = [int(x) for x in
         DF[naics_column]
         ]
 

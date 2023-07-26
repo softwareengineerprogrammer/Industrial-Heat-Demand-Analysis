@@ -18,7 +18,8 @@ import GHGRP_AAenergy_calc
 
 if __name__ == '__main__':
     # years = range(2010, 2016)
-    years = [2010, 2015, 2021]
+    # years = [2010, 2015, 2021]
+    years = [2010]
 
     tables = [
         'C_FUEL_LEVEL_INFORMATION',
@@ -92,24 +93,24 @@ if __name__ == '__main__':
 
     aa_ffuel_table.to_csv(file_dir + aa_ffuel_file)
 
-    facfile_2010 = file_dir + "fac_table_2010.csv"
+    facfile_2010 = file_dir + 'fac_table_2010.csv'
 
     facfiles_201115 = []
 
     for y in years:
         facfiles_201115.append(
-            file_dir + "fac_table_" + str(y) + ".csv"
+            file_dir + f'fac_table_{y}.csv'
         )
 
     # Finding missing FIPS codes in format_GHGRP_facilities takes a long time due
-    # to the way a API query is currently written.
+    # to the way an API query is currently written.
     facdata = GHGRP_energy_calc.format_GHGRP_facilities(
         facfile_2010, facfiles_201115
     )
 
     for y in years:
-        c_file = file_dir + "c_fuel_" + str(y) + ".csv"
-        d_file = file_dir + "d_fuel_" + str(y) + ".csv"
+        c_file = file_dir + f'c_fuel_{y}.csv'
+        d_file = file_dir + f'd_fuel_{y}.csv'
 
         GHGs_y = \
             GHGRP_energy_calc.format_GHGRP_emissions(c_file, d_file)
@@ -118,7 +119,7 @@ if __name__ == '__main__':
             GHGs_y, facdata, EFs, wood_facID
         )
 
-        ghgrp_energy = ghgrp_energy.append(GHGs_y)
+        ghgrp_energy = pd.concat([ghgrp_energy,GHGs_y])
 
     # Calculate energy for Subpart AA reporters
     GHGs_FF = GHGRP_AAenergy_calc.format_GHGRP_AAff_emissions(
