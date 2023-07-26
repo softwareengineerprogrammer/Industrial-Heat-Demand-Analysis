@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+import json
+import tempfile
+from json import JSONDecodeError
+from pathlib import Path
 
 import pandas as pd
 import requests
 import xml.etree.ElementTree as et
+
 
 def xml_to_df(xml_root, table_name, df_columns):
     """
@@ -21,7 +26,10 @@ def xml_to_df(xml_root, table_name, df_columns):
     return rpd
 
 
-def get_GHGRP_records(reporting_year: int, table: str, rows: int = None):
+_GHGRP_records_cache = None
+
+
+def get_GHGRP_records(reporting_year: int, table: str, rows: int = None, enable_cache=True):
     """
     Return GHGRP data using EPA RESTful API based on specified reporting year 
     and table. Tables of interest are C_FUEL_LEVEL_INFORMATION, 
@@ -31,6 +39,24 @@ def get_GHGRP_records(reporting_year: int, table: str, rows: int = None):
     """
 
     print(f'Getting GHGRP records for {table}/{reporting_year}...')
+
+    global _GHGRP_records_cache
+    cache_key = f'{table}/{reporting_year}'
+    cache_file_path = Path(tempfile.gettempdir(), 'ghgrp-records-cache.json')
+    if enable_cache:
+        if _GHGRP_records_cache is None:
+            try:
+                with open(cache_file_path, 'r') as cache_file:
+                    _GHGRP_records_cache = json.loads(''.join(cache_file.readlines()))
+                    print(f'Valid cache file found: {cache_file_path}')
+            except (FileNotFoundError, JSONDecodeError) as e:
+                print(f'No valid cache file found, will create one at {cache_file_path}.')
+                _GHGRP_records_cache = {}
+
+        if cache_key in _GHGRP_records_cache:
+            cached_result = pd.DataFrame.from_dict(_GHGRP_records_cache[cache_key])
+            print(f'\tFound cached GHGRP records for {table}/{reporting_year} with {len(cached_result)} rows.')
+            return cached_result
 
     # See https://www.epa.gov/enviro/envirofacts-data-service-api
     envirofacts_base_url = 'https://data.epa.gov/efservice'
@@ -97,6 +123,12 @@ def get_GHGRP_records(reporting_year: int, table: str, rows: int = None):
     ghgrp.drop_duplicates(inplace=True)
 
     print(f'\tGot {len(ghgrp)} GHGRP records for {table}/{reporting_year}.')
+
+    if enable_cache:
+        _GHGRP_records_cache[cache_key] = ghgrp.to_dict()
+        with open(cache_file_path, 'w') as cache_file:
+            cache_file.write(json.dumps(_GHGRP_records_cache))
+
     return ghgrp
 
 

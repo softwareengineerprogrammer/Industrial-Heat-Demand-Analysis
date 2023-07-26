@@ -63,20 +63,17 @@ def format_GHGRP_emissions(c_fuel_file, d_fuel_file):
         d_fuel_file, encoding='latin_1', index_col=0, low_memory=False
     )
 
-    #    c_ghgs = c_fuel_file
-    #
-    #    d_ghgs = d_fuel_file
+    # c_ghgs = c_fuel_file
+    # d_ghgs = d_fuel_file
 
     GHGs = pd.concat([c_ghgs, d_ghgs], axis=0, ignore_index=True)
 
     GHGs.dropna(axis=0, subset=['FACILITY_ID'], inplace=True)
 
-    #    if True in [type(x) == np.str for x in GHGs.REPORTING_YEAR.values]:
-    #
-    #        GHGs = \
-    #            GHGs[
-    #                GHGs.REPORTING_YEAR.apply(lambda x: type(x) == int) == True
-    #                ]
+    # if True in [type(x) == np.str for x in GHGs.REPORTING_YEAR.values]:
+    # GHGs = GHGs[
+    #    GHGs.REPORTING_YEAR.apply(lambda x: type(x) == int) == True
+    # ]
 
     for c in ('FACILITY_ID', 'REPORTING_YEAR'):
         GHGs.loc[:, c] = [int(x) for x in GHGs[c]]
@@ -88,8 +85,11 @@ def format_GHGRP_emissions(c_fuel_file, d_fuel_file):
     GHGs.loc[fuel_fix_index, 'FUEL_TYPE_OTHER'] = np.nan
 
     # Fix errors in reported data.
-    if GHGs.REPORTING_YEAR.drop_duplicates().values[0] == 2014:
+    reporting_year_from_deduped_values = None
+    if len(GHGs.REPORTING_YEAR.drop_duplicates().values) > 0:
+        reporting_year_from_deduped_values = GHGs.REPORTING_YEAR.drop_duplicates().values[0]
 
+    if reporting_year_from_deduped_values == 2014:
         for i in list(GHGs[(GHGs.FACILITY_ID == 1005675) & \
                            (GHGs.REPORTING_YEAR == 2014)].index):
             GHGs.loc[i, 'TIER2_CH4_EMISSIONS_CO2E'] = \
@@ -106,7 +106,7 @@ def format_GHGRP_emissions(c_fuel_file, d_fuel_file):
             GHGs.loc[i, 'T4N2OCOMBUSTIONEMISSIONS'] = \
                 GHGs.loc[i, 'T4N2OCOMBUSTIONEMISSIONS'] / 1000
 
-    if GHGs.REPORTING_YEAR.drop_duplicates().values[0] == 2012:
+    if reporting_year_from_deduped_values == 2012:
         selection = GHGs.loc[
             (GHGs.FACILITY_ID == 1000415) & (GHGs.FUEL_TYPE == 'Bituminous')
             ].index
@@ -117,14 +117,16 @@ def format_GHGRP_emissions(c_fuel_file, d_fuel_file):
             ('T4CH4COMBUSTIONEMISSIONS'):('TIER4_N2O_EMISSIONS_CO2E')
             ] / 10
 
-    GHGs.loc[:, 'CO2e_TOTAL'] = 0
+    try:
+        GHGs.loc[:, 'CO2e_TOTAL'] = 0
+    except ValueError as e:
+        print(f'[WARN] Unable to append CO2e_TOTAL ({e})')
 
     total_co2 = pd.DataFrame()
 
     for tier in ['TIER1_', 'TIER2_', 'TIER3_']:
 
-        for ghg in ['CH4_EMISSIONS_CO2E', 'N2O_EMISSIONS_CO2E', \
-                    'CO2_COMBUSTION_EMISSIONS']:
+        for ghg in ['CH4_EMISSIONS_CO2E', 'N2O_EMISSIONS_CO2E','CO2_COMBUSTION_EMISSIONS']:
             total_co2 = pd.concat([total_co2, GHGs[tier + ghg]], axis=1)
 
     #            GHGs.loc[:, 'CO2e_TOTAL'] = \
@@ -136,7 +138,6 @@ def format_GHGRP_emissions(c_fuel_file, d_fuel_file):
     total_co2.fillna(0, inplace=True)
 
     GHGs.loc[:, 'CO2e_TOTAL'] = total_co2.sum(axis=1)
-    #
 
     #       GHGs.loc[:, 'CO2e_TOTAL'] = GHGs.loc[:, 'CO2e_TOTAL'] + \
     #            GHGs[ghg].fillna(0)
@@ -273,9 +274,9 @@ def format_GHGRP_facilities(fac_file_2010, oth_facfiles):
 
     concat_mecs_region = pd.concat(
         [all_fac.MECS_Region, MECS_regions.MECS_Region],
-        axis=1,
-        join_axes=[all_fac.COUNTY_FIPS]
+        axis=1
     )
+    concat_mecs_region = concat_mecs_region.reindex(all_fac.COUNTY_FIPS)
 
     all_fac.loc[:, 'MECS_Region'] = concat_mecs_region.iloc[:, 1].values
 
@@ -354,6 +355,9 @@ def calculate_energy(GHGs, all_fac, EFs, wood_facID):
         GHGs, all_fac[merge_cols], how='inner', on='FACILITY_ID'
     )
 
+    if len(GHGs) == 0:
+        return GHGs
+
     #   First, zero out 40 CFR Part 75 energy use for electric utilities
     GHGs.loc[GHGs[GHGs.PRIMARY_NAICS_CODE == 221112].index,
     'TOTAL_ANNUAL_HEAT_INPUT'] = 0
@@ -361,7 +365,7 @@ def calculate_energy(GHGs, all_fac, EFs, wood_facID):
     GHGs.loc[GHGs[GHGs.PRIMARY_NAICS_CODE == 221112].index,
     'PART_75_ANNUAL_HEAT_INPUT'] = 0
 
-    # Correct for revision in 2013to Table AA-1 emission factors for kraft 
+    # Correct for revision in 2013 to Table AA-1 emission factors for kraft
     # pulping liquor emissions. CH4 changed from 7.2g CH4/MMBtu HHV to 
     # 1.9g CH4/MMBtu HHV.
     if GHGs.REPORTING_YEAR[0] in [2010, 2011, 2012]:
@@ -511,6 +515,9 @@ def id_industry_groups(GHGs):
         GHGs['PRIMARY_NAICS_CODE'].apply(lambda n: int(str(n)[0:3]))
 
     GHGs = pd.merge(GHGs, gd_df, left_on=GHGs.PNC_3, right_index=True)
+
+    if len(GHGs) == 0:
+        return GHGs
 
     # Identify manufacturing groupings
     gd_df['MFG'] = \
