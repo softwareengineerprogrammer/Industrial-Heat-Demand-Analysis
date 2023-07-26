@@ -4,7 +4,6 @@ import pandas as pd
 import requests
 import xml.etree.ElementTree as et
 
-
 def xml_to_df(xml_root, table_name, df_columns):
     """
     Converts elements of xml string obtained from EPA envirofact (GHGRP)
@@ -31,6 +30,8 @@ def get_GHGRP_records(reporting_year: int, table: str, rows: int = None):
     Optional argument to specify number of table rows.
     """
 
+    print(f'Getting GHGRP records for {table}/{reporting_year}...')
+
     # See https://www.epa.gov/enviro/envirofacts-data-service-api
     envirofacts_base_url = 'https://data.epa.gov/efservice'
 
@@ -52,8 +53,10 @@ def get_GHGRP_records(reporting_year: int, table: str, rows: int = None):
     if rows is None:
         try:
             r = requests.get(f'{table_url}/count/')
-            n_records = int(et.fromstring(r.content)[0].text)
-        except:
+            n_records = int(list(et.fromstring(r.content).iter('TOTALQUERYRESULTS'))[0].text)
+        except IndexError as ie:
+            n_records = int(list(et.fromstring(r.content).iter('RequestRecordCount'))[0].text)
+        except Exception as e:
             r.raise_for_status()
 
         if n_records > 10000:
@@ -93,6 +96,7 @@ def get_GHGRP_records(reporting_year: int, table: str, rows: int = None):
 
     ghgrp.drop_duplicates(inplace=True)
 
+    print(f'\tGot {len(ghgrp)} GHGRP records for {table}/{reporting_year}.')
     return ghgrp
 
 
