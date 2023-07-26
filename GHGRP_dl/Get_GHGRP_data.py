@@ -34,7 +34,7 @@ def get_GHGRP_records(reporting_year: int, table: str, rows: int = None):
     # See https://www.epa.gov/enviro/envirofacts-data-service-api
     envirofacts_base_url = 'https://data.epa.gov/efservice'
 
-    if table[0:14] == 'V_GHG_EMITTER_':
+    if table.startswith('V_GHG_EMITTER_'):
         table_url = f'{envirofacts_base_url}/{table}/YEAR/{reporting_year}'
     else:
         table_url = f'{envirofacts_base_url}/{table}/REPORTING_YEAR/{reporting_year}'
@@ -52,32 +52,30 @@ def get_GHGRP_records(reporting_year: int, table: str, rows: int = None):
     if rows is None:
         try:
             r = requests.get(f'{table_url}/count/')
-            nrecords = int(et.fromstring(r.content)[0].text)
+            n_records = int(et.fromstring(r.content)[0].text)
         except:
             r.raise_for_status()
 
-        if nrecords > 10000:
-            rrange = range(0, nrecords, 10000)
+        if n_records > 10000:
+            r_range = range(0, n_records, 10000)
 
-            for n in range(len(rrange) - 1):
+            for n in range(len(r_range) - 1):
                 try:
-                    r_records = requests.get(f'{table_url}/rows/{rrange[n]}:{rrange[n + 1]}')
+                    r_records = requests.get(f'{table_url}/rows/{r_range[n]}:{r_range[n + 1]}')
                     records_root = et.fromstring(r_records.content)
                     r_df = xml_to_df(records_root, table, ghgrp.columns)
                     ghgrp = pd.concat([ghgrp, r_df])
                 except:
                     r_records.raise_for_status()
 
-            records_last = \
-                requests.get(f'{table_url}/rows/{rrange[-1]}:{nrecords}')
+            records_last = requests.get(f'{table_url}/rows/{r_range[-1]}:{n_records}')
             records_lroot = et.fromstring(records_last.content)
             rl_df = xml_to_df(records_lroot, table, ghgrp.columns)
             ghgrp = pd.concat([ghgrp, rl_df])
 
         else:
             try:
-                r_records = \
-                    requests.get(f'{table_url}/rows/0:{nrecords}')
+                r_records = requests.get(f'{table_url}/rows/0:{n_records}')
                 records_root = et.fromstring(r_records.content)
                 r_df = xml_to_df(records_root, table, ghgrp.columns)
                 ghgrp = pd.concat([ghgrp, r_df])
@@ -100,7 +98,7 @@ def get_GHGRP_records(reporting_year: int, table: str, rows: int = None):
 
 if __name__ == '__main__':
     for t in ['V_GHG_EMITTER_FACILITIES']:
-        for year in [2021]:
+        for year in [2015, 2021]:
             print(f'Getting data for {t}/{year}...')
             df = get_GHGRP_records(year, t)
             print(f'\tGot {len(df)} rows for {t}/{year}')
