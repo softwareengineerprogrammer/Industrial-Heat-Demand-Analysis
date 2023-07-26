@@ -1,2 +1,5 @@
 .idea
 venv
+
+GHGRP_dl/*.csv
+!GHGRP_dl/EPA_FuelEFs.csv
