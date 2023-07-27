@@ -5,3 +5,4 @@ venv
 GHGRP_dl/*.csv
 !GHGRP_dl/EPA_FuelEFs.csv
 !GHGRP_dl/US_FIPS_Codes.csv
+!GHGRP_dl/GHGRP_all_20230726-1716.csv
