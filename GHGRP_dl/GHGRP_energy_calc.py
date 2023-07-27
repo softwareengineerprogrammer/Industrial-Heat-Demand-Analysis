@@ -513,8 +513,7 @@ def id_industry_groups(GHGs):
 
     gd_df.set_index('PNC_3', inplace=True)
 
-    # FIXME filter out NaNs instead of substituting with -1
-    GHGs['PNC_3'] = GHGs['PRIMARY_NAICS_CODE'].apply(lambda n: int(str(n)[0:3]) if not math.isnan(n) else -1)
+    GHGs['PNC_3'] = GHGs['PRIMARY_NAICS_CODE'].apply(lambda n: int(str(n)[0:3]) if not math.isnan(n) else None)
 
     GHGs = pd.merge(GHGs, gd_df, left_on=GHGs.PNC_3, right_index=True)
 
@@ -570,7 +569,7 @@ if __name__ == '__main__':
     # EFs['dup_index'] = EFs.index.duplicated()
     #
     # EFs = pd.DataFrame(EFs[EFs.dup_index == False], columns = EFs.columns[0:2])
-
+    #
     # GHGs = format_GHGRP_emissions(c_fuel_file, d_fuel_file)
     #
     # facdata = format_GHGRP_facilities(facilities_file)
