@@ -84,7 +84,7 @@ def import_IHS_data(ihs_file):
     """
     Imports heat characteristic data by NAICS and end use.
     """
-    ihs_data = pd.read_excel(ihs_file, sheetname=['MECS', 'HeatChar'])
+    ihs_data = pd.read_excel(ihs_file, sheet_name=['MECS', 'HeatChar'])
 
     ihs_data['MECS'].dropna(axis=0, inplace=True)
 

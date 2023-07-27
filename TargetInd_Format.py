@@ -25,7 +25,7 @@ def ti_format(ghgrp_energy_file, target_ind_file):
     ghgrp_energy.SECONDARY_NAICS_CODE.fillna(0, inplace=True)
 
     ghgrp_energy.loc[:, 'SECONDARY_NAICS_CODE'] = \
-        ghgrp_energy.SECONDARY_NAICS_CODE.astype(int64)
+        ghgrp_energy.SECONDARY_NAICS_CODE.astype(np.int64)
 
     target_201015 = pd.DataFrame(
         ghgrp_energy[(ghgrp_energy.PRIMARY_NAICS_CODE.apply(
