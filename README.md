@@ -36,7 +36,7 @@ Energy by end use is further characterized by temperature range and load.
 
 ### `Heat_CONFIG.py`
 The code for characterizing and analyzing target industry heat demand for 2010 - 2015.
-Calls the methods contined in `Enduse_Calc.py`, `TargetInd_Format.py`, `SupSizing.py`
+Calls the methods contained in `Enduse_Calc.py`, `TargetInd_Format.py`, `SupSizing.py`
 
 ### `Enduse_Calc.py`
 Methods for estimating energy use by end use (e.g., conventional boiler, process heating) based on GHGRP-reported unit types and unit names and using [2010 MECS](http://www.eia.gov/consumption/manufacturing/data/2010/).

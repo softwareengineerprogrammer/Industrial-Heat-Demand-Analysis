@@ -17,6 +17,7 @@ import GHGRP_energy_calc
 import GHGRP_AAenergy_calc
 
 if __name__ == '__main__':
+    # TODO re-enable full range
     # years = range(2010, 2016)
     years = [2010, 2015, 2021]
 
