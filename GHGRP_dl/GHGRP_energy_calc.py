@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import requests
 import json
+import math
 
 
 def fipfind(f, missingfips):
@@ -126,7 +127,7 @@ def format_GHGRP_emissions(c_fuel_file, d_fuel_file):
 
     for tier in ['TIER1_', 'TIER2_', 'TIER3_']:
 
-        for ghg in ['CH4_EMISSIONS_CO2E', 'N2O_EMISSIONS_CO2E','CO2_COMBUSTION_EMISSIONS']:
+        for ghg in ['CH4_EMISSIONS_CO2E', 'N2O_EMISSIONS_CO2E', 'CO2_COMBUSTION_EMISSIONS']:
             total_co2 = pd.concat([total_co2, GHGs[tier + ghg]], axis=1)
 
     #            GHGs.loc[:, 'CO2e_TOTAL'] = \
@@ -512,8 +513,8 @@ def id_industry_groups(GHGs):
 
     gd_df.set_index('PNC_3', inplace=True)
 
-    GHGs['PNC_3'] = \
-        GHGs['PRIMARY_NAICS_CODE'].apply(lambda n: int(str(n)[0:3]))
+    # FIXME filter out NaNs instead of substituting with -1
+    GHGs['PNC_3'] = GHGs['PRIMARY_NAICS_CODE'].apply(lambda n: int(str(n)[0:3]) if not math.isnan(n) else -1)
 
     GHGs = pd.merge(GHGs, gd_df, left_on=GHGs.PNC_3, right_index=True)
 
