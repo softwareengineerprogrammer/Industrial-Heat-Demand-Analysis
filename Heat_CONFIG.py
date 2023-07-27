@@ -19,17 +19,19 @@ if __name__ == '__main__':
     # This is the directory for files used in end-use calculations
     filesdir = 'data_for_heat_calcs/'
 
+    build_dir = 'build/'
+
     # This is the file location for relevant data downloaded from EPA's API
     # FIXME TEMP WIP
     energy_file = 'GHGRP_dl/GHGRP_all_20230727-0930.csv'
 
     # This is total emissions, including biogenic
-    emissions_file = "GHGRP_emissions_201015.csv"
+    emissions_file = 'GHGRP_emissions_201015.csv'
 
     # This is only biogenic emissions
-    emissions_bio_file = "GHGRP_emissions_bio_201015.csv"
+    emissions_bio_file = 'GHGRP_emissions_bio_201015.csv'
 
-    targetind_file = "target_industries.csv"
+    targetind_file = 'target_industries.csv'
 
     ihs_file = 'IHS_Process_info.xlsx'
 
@@ -45,20 +47,22 @@ if __name__ == '__main__':
 
     MECS_NAICS = pd.read_csv(Path(filesdir, 'mecs_naics.csv'))
 
-    fuelxwalkDict = dict(pd.read_csv(filesdir + 'MECS_FT_hs_wo-bio.csv')[[
-        "EPA_FUEL_TYPE", "MECS_FT"]
-                         ].values
-                         )
+    fuelxwalkDict = dict(
+        pd.read_csv(Path(filesdir, 'MECS_FT_hs_wo-bio.csv'))[[
+            "EPA_FUEL_TYPE", "MECS_FT"]
+        ].values
+    )
 
-    bioxwalkDict = dict(pd.read_csv(filesdir + 'MECS_FT_hs_wo-bio.csv')[[
-        "EPA_FUEL_TYPE", "Biogenic"]
-                        ].values
-                        )
+    bioxwalkDict = dict(
+        pd.read_csv(Path(filesdir, 'MECS_FT_hs_wo-bio.csv'))[[
+            "EPA_FUEL_TYPE", "Biogenic"]
+        ].values
+    )
 
     target_energy = pd.read_csv(energy_file, index_col=0, encoding='latin1')
 
     target_energy = TargetInd_Format.ti_format(
-        energy_file, filesdir + targetind_file
+        energy_file, Path(filesdir, targetind_file)
     )
 
     Enduse_Calc.MatchMECS_NAICS_FT(target_energy, 'FINAL_NAICS_CODE', MECS_NAICS,
@@ -105,7 +109,6 @@ if __name__ == '__main__':
 
     target_ghgs.reset_index(drop=False, inplace=True)
 
-    #
     # Create summary of bio and total GHG emissions for target industries
     ID_NAICS = \
         dict(pd.DataFrame(
@@ -201,21 +204,17 @@ if __name__ == '__main__':
         Path(filesdir, efs_file),
         target_char,
 
-        # FIXME WIP
-        # fuelxwalkDict,
-        # bioxwalkDict
+        # FIXME verify merging the 2 dicts is correct
         fuelxwalkDict.update(bioxwalkDict)
     )
 
     # Output file for use in jupyter notebook
-    # target_char.to_csv(
-    #    "C:\\Users\\cmcmilla\\Desktop\\GHGRP_output\\target_char.csv"
-    #    )
+    target_char.to_csv(Path(build_dir, 'target_char.csv'))
 
     ##
     # Calulate matched load and matched supply for each facility
     # Also draws and saves load and energy curves for 2010 - 2015
-    alt_load, all_load, supply_match = SupSizing.AltES_Sizing(target_char, True)
+    alt_load, all_load, supply_match = SupSizing.AltES_Sizing(target_char, plot_load_figs=True)
 
     ##
     # Plot figure for facility load and temperature, along with alt gen
@@ -231,7 +230,6 @@ if __name__ == '__main__':
         supply_savings[df].to_excel(xlswriter, sheet_name=df)
 
     xlswriter.save()
-
 
     # Summarize annual fossil fuel use by temperature range
     pd.pivot_table(
@@ -364,7 +362,6 @@ if __name__ == '__main__':
     savings_map_data.dropna(subset=['savings_MMTCO2E_total'], axis=0, inplace=True)
 
     for y in [2015]:
-
         #    savings_map_data = pd.DataFrame(
         #        savings_map_data[savings_map_data.REPORTING_YEAR == y].groupby(
         #            ['COUNTY_FIPS', 'FACILITY_ID'], as_index=False
@@ -377,18 +374,18 @@ if __name__ == '__main__':
             ).savings_MMTCO2E_total.sum()
         )
 
-        #    FJ_2011 = ps.Fisher_Jenks(
-        #        savings_map_data_input.savings_MMTCO2E_total, k = 5
-        #        )
+    #    FJ_2011 = ps.Fisher_Jenks(
+    #        savings_map_data_input.savings_MMTCO2E_total, k = 5
+    #        )
 
-        savings_map = MakeCountyMap.CountyEnergy_Maps(savings_map_data_input)
+    savings_map = MakeCountyMap.CountyEnergy_Maps(savings_map_data_input)
 
-        if y == 2015:
-            savings_map.make_map('savings_MMTCO2E_total', 5, FJ_2011)
-        else:
-            savings_map.make_map('savings_MMTCO2E_total', 5)
+    if y == 2015:
+        savings_map.make_map('savings_MMTCO2E_total', 5, FJ_2011)
+    else:
+        savings_map.make_map('savings_MMTCO2E_total', 5)
 
-        print(np.round(
-            ps.Fisher_Jenks(savings_map_data_input.savings_MMTCO2E_total, k=5).bins,
-            decimals=1)
-        )
+    print(np.round(
+        ps.Fisher_Jenks(savings_map_data_input.savings_MMTCO2E_total, k=5).bins,
+        decimals=1)
+    )
