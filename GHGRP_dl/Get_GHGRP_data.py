@@ -47,7 +47,11 @@ def get_GHGRP_records(
     # TODO put cache in a dedicated class
     global _GHGRP_records_cache
     cache_key = f'{table}/{reporting_year}'
-    cache_file_path = Path(tempfile.gettempdir(), 'ghgrp-records-cache.json')
+
+    tmp_dir = Path(Path(__file__).parent.parent, 'build', 'tmp')
+    tmp_dir.mkdir(exist_ok=True)
+
+    cache_file_path = Path(tmp_dir, 'ghgrp-records-cache.json')
     if enable_cache:
         if _GHGRP_records_cache is None:
             try:
