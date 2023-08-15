@@ -1,1 +1,1 @@
-GHGRP_dl/GHGRP_all_20230726-1716.csv filter=lfs diff=lfs merge=lfs -text
+GHGRP_dl/GHGRP_all_*.csv filter=lfs diff=lfs merge=lfs -text
