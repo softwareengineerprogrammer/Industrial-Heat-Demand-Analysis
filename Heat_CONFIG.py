@@ -22,7 +22,6 @@ if __name__ == '__main__':
     build_dir = 'build/'
 
     # This is the file location for relevant data downloaded from EPA's API
-    # FIXME TEMP WIP
     energy_file = 'build/GHGRP_all_20230814-0954.csv'
 
     # This is total emissions, including biogenic
