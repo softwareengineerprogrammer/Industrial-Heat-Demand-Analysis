@@ -4,22 +4,17 @@ Created on Fri Jul 28 14:05:05 2017
 
 @author: cmcmilla
 """
+from pathlib import Path
 
 import pandas as pd
-import numpy as np
 import datetime
-import requests
-import xml.etree.ElementTree as et
-import json
 
 import Get_GHGRP_data
 import GHGRP_energy_calc
 import GHGRP_AAenergy_calc
 
 if __name__ == '__main__':
-    # TODO re-enable full range
-    # years = range(2010, 2016)
-    years = [2010, 2015, 2021]
+    years = range(2010, 2021)
 
     tables = [
         'c_fuel_level_information',
@@ -36,11 +31,17 @@ if __name__ == '__main__':
     EFs = pd.DataFrame(EFs[EFs.dup_index == False], columns=EFs.columns[0:2])
 
     # Set file directory
-    file_dir = ''  # TODO use Path('.',<file_name>)
+    file_dir = Path('.')
+    build_dir = Path(Path(__file__).parent.parent, 'build')
+
+
+    def build_path(file_name):
+        return Path(build_dir, file_name)
+
 
     # List of facilities for correction of combustion emissions from Wood and Wood
     # Residuals for using Subpart C Tier 4 calculation methodology.
-    wood_facID = pd.read_csv('WoodRes_correction_facilities.csv', index_col=['FACILITY_ID'])
+    wood_facID = pd.read_csv(Path(file_dir, 'WoodRes_correction_facilities.csv'), index_col=['FACILITY_ID'])
 
     ghgrp_energy = pd.DataFrame()
     aa_sl_table = pd.DataFrame()
@@ -50,21 +51,20 @@ if __name__ == '__main__':
     for y in years:
         for t in tables:
             df = Get_GHGRP_data.get_GHGRP_records(y, t)
-            df.to_csv(f'{t[0:6]}_{y}.csv')
+            df.to_csv(build_path(f'{t[0:6]}_{y}.csv'))
 
     for y in years:
-
         c_fuel_table = Get_GHGRP_data.get_GHGRP_records(y, tables[0])
-        c_fuel_table.to_csv(f'c_fuel_{y}.csv')
+        c_fuel_table.to_csv(build_path(f'c_fuel_{y}.csv'))
 
         d_fuel_table = Get_GHGRP_data.get_GHGRP_records(y, tables[1])
-        d_fuel_table.to_csv(f'd_fuel_{y}.csv')
+        d_fuel_table.to_csv(build_path(f'd_fuel_{y}.csv'))
 
         fac_table = Get_GHGRP_data.get_GHGRP_records(y, tables[2])
-        fac_table.to_csv(f'fac_table_{y}.csv')
+        fac_table.to_csv(build_path(f'fac_table_{y}.csv'))
 
         for t in [('c_fuel_table', c_fuel_table), ('d_fuel_table', d_fuel_table), ('fac_table', fac_table)]:
-            t[1].to_csv(f'{t[0]}_{y}.csv')
+            t[1].to_csv(build_path(f'{t[0]}_{y}.csv'))
 
     # Subpart AA tables are much smaller and addressed slightly differently
     for y in years:
@@ -79,17 +79,17 @@ if __name__ == '__main__':
         ])
 
     aa_sl_file = f'aa_sl_table_{years[0]}{years[-1]}.csv'
-    aa_sl_table.to_csv(file_dir + aa_sl_file)
+    aa_sl_table.to_csv(build_path(aa_sl_file))
 
     aa_ffuel_file = f'aa_ffuel_table_{years[0]}{years[-1]}.csv'
-    aa_ffuel_table.to_csv(file_dir + aa_ffuel_file)
+    aa_ffuel_table.to_csv(build_path(aa_ffuel_file))
 
-    facfile_2010 = file_dir + 'fac_table_2010.csv'
+    facfile_2010 = build_path('fac_table_2010.csv')
     facfiles_201115 = []
 
     for y in years:
         facfiles_201115.append(
-            file_dir + f'fac_table_{y}.csv'
+            build_path(f'fac_table_{y}.csv')
         )
 
     # Finding missing FIPS codes in format_GHGRP_facilities takes a long time due
@@ -99,8 +99,8 @@ if __name__ == '__main__':
     )
 
     for y in years:
-        c_file = file_dir + f'c_fuel_{y}.csv'
-        d_file = file_dir + f'd_fuel_{y}.csv'
+        c_file = build_path(f'c_fuel_{y}.csv')
+        d_file = build_path(f'd_fuel_{y}.csv')
 
         GHGs_y = \
             GHGRP_energy_calc.format_GHGRP_emissions(c_file, d_file)
@@ -113,11 +113,11 @@ if __name__ == '__main__':
 
     # Calculate energy for Subpart AA reporters
     GHGs_FF = GHGRP_AAenergy_calc.format_GHGRP_AAff_emissions(
-        file_dir + aa_ffuel_file
+        build_path(aa_ffuel_file)
     )
 
     GHGs_SL = GHGRP_AAenergy_calc.format_GHGRP_AAsl_emissions(
-        file_dir + aa_sl_file
+        build_path(aa_sl_file)
     )
 
     AA_FF_energy = GHGRP_AAenergy_calc.MMBTU_calc_AAff(GHGs_FF, EFs)
@@ -156,4 +156,4 @@ if __name__ == '__main__':
         'UNIT_NAME',
         'UNIT_TYPE',
         'MMBtu_TOTAL'
-    ]].to_csv(file_dir + outputfile)
+    ]].to_csv(Path(build_dir, outputfile))
