@@ -1,1 +1,2 @@
 GHGRP_dl/GHGRP_all_*.csv filter=lfs diff=lfs merge=lfs -text
+build/target_char.csv filter=lfs diff=lfs merge=lfs -text
