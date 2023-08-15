@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     # This is the file location for relevant data downloaded from EPA's API
     # FIXME TEMP WIP
-    energy_file = 'GHGRP_dl/GHGRP_all_20230727-0930.csv'
+    energy_file = 'build/GHGRP_all_20230814-0722.csv'
 
     # This is total emissions, including biogenic
     emissions_file = 'GHGRP_emissions_201015.csv'
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     # Calculate energy by end use. Eu_results is a dictionary of dataframes:
     # 'target_enduse' is calculated end use energy based on MECS data and
-    # GHGRP unit type designations and 'eu_noMECS' is end use energy calcualted
+    # GHGRP unit type designations and 'eu_noMECS' is end use energy calculated
     # using only GHGRP unit type designations.
     eu_results = \
         Enduse_Calc.enduse_calc(target_energy, ihs_data, filesdir + eu_file)
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     eu_results['target_enduse'].loc[:, 'for_EU_sum'] = \
         eu_results['target_enduse'].END_USE.apply(lambda x: x in eu_list)
 
-    #
+
     # This is the output of portion of total calculated energy that is
     # captured bye end use calculations (doesn't break out by year).
     eu_results['target_enduse'][
@@ -203,20 +203,16 @@ if __name__ == '__main__':
     target_char = Enduse_Calc.ghg_calc(
         Path(filesdir, efs_file),
         target_char,
-
-        # FIXME verify merging the 2 dicts is correct
-        fuelxwalkDict.update(bioxwalkDict)
+        fuelxwalkDict
     )
 
     # Output file for use in jupyter notebook
     target_char.to_csv(Path(build_dir, 'target_char.csv'))
 
-    ##
-    # Calulate matched load and matched supply for each facility
+    # Calculate matched load and matched supply for each facility
     # Also draws and saves load and energy curves for 2010 - 2015
     alt_load, all_load, supply_match = SupSizing.AltES_Sizing(target_char, plot_load_figs=True)
 
-    ##
     # Plot figure for facility load and temperature, along with alt gen
     # for a given year
     SupSizing.DrawMatchPlot(supply_match, all_load, 2015)
@@ -245,7 +241,7 @@ if __name__ == '__main__':
     ghg_savings.loc[:, 'CO2E_fossil_GHGRP'] = \
         ghg_savings.CO2E_GHGRP.subtract(ghg_savings.CO2E_bio_GHGRP, fill_value=0)
 
-    #
+
     # Create summary table of annual GHG savings and ff savings by industry
     ghg_savings_summ = pd.DataFrame(
         ghg_savings.groupby(
@@ -295,7 +291,7 @@ if __name__ == '__main__':
             values='CO2E_GHGRP', aggfunc=np.sum
         ).sum(axis=0)
     )
-    #
+
     # Calculate annual dollar values of fossil fuel savings (in $B)
     ff_prices = pd.read_excel(
         filesdir + ff_price_file, sheetname='Dollar_per_TJ',
@@ -374,18 +370,18 @@ if __name__ == '__main__':
             ).savings_MMTCO2E_total.sum()
         )
 
-    #    FJ_2011 = ps.Fisher_Jenks(
-    #        savings_map_data_input.savings_MMTCO2E_total, k = 5
-    #        )
-
     savings_map = MakeCountyMap.CountyEnergy_Maps(savings_map_data_input)
 
     if y == 2015:
+        FJ_2011 = ps.Fisher_Jenks(
+            savings_map_data_input.savings_MMTCO2E_total,
+            k=5
+        )
+
         savings_map.make_map('savings_MMTCO2E_total', 5, FJ_2011)
     else:
         savings_map.make_map('savings_MMTCO2E_total', 5)
 
     print(np.round(
         ps.Fisher_Jenks(savings_map_data_input.savings_MMTCO2E_total, k=5).bins,
-        decimals=1)
-    )
+        decimals=1))
